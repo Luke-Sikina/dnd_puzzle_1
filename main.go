@@ -2,11 +2,13 @@ package main
 
 import (
 	"errors"
+	"math"
 	"math/rand"
 	"time"
 )
 
 type Operator int
+type Candidate []Operator
 
 const (
 	PLUS Operator = iota
@@ -27,6 +29,41 @@ func GenerateOperators(terms int) ([]Operator, error) {
 	}
 
 	return operators, nil
+}
+
+func EvaluateCandidate(candidate Candidate, terms []int, goal int) bool {
+	if len(candidate)+1 != len(terms) {
+		return false
+	}
+
+	if len(terms) == 1 {
+		return terms[0] == goal
+	}
+
+	total := terms[0]
+
+	for index, operator := range candidate {
+		total = EvaluateOperator(total, terms[index+1], operator)
+	}
+	return total == goal
+}
+
+func EvaluateOperator(first int, second int, operator Operator) int {
+	switch operator {
+	case PLUS:
+		return first + second
+	case MINUS:
+		return first - second
+	case TIMES:
+		return first * second
+	case DIVIDE:
+		if second == 0 {
+			return math.MaxInt64
+		}
+		return first / second
+	default:
+		return first // this should be unreachable, but the compiler requires it
+	}
 }
 
 func main() {
