@@ -31,6 +31,15 @@ func GenerateOperators(terms int) ([]Operator, error) {
 	return operators, nil
 }
 
+func FilterOperators(unfiltered []Candidate, terms []int, goal int) (filtered []Candidate) {
+	for _, candidate := range unfiltered {
+		if EvaluateCandidate(candidate, terms, goal) {
+			filtered = append(filtered, candidate)
+		}
+	}
+	return
+}
+
 func EvaluateCandidate(candidate Candidate, terms []int, goal int) bool {
 	if len(candidate)+1 != len(terms) {
 		return false

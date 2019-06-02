@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"testing"
 )
@@ -95,6 +96,33 @@ func TestEvaluateOperator(t *testing.T) {
 		if actual != testCase.Expected {
 			t.Errorf("Test case %d: EvaluateOperator(%d %d %d) expected: %d, got: %d",
 				index, testCase.First, testCase.Second, testCase.Operator, testCase.Expected, actual)
+		}
+	}
+}
+
+type FilterOperatorsCase struct {
+	Unfiltered []Candidate
+	Terms      []int
+	Goal       int
+	Expected   []Candidate
+}
+
+func TestFilterOperators(t *testing.T) {
+	testCases := []FilterOperatorsCase{
+		{[]Candidate{{PLUS}, {MINUS}, {DIVIDE}, {TIMES}}, []int{1, 1}, 2, []Candidate{{PLUS}}},
+		{[]Candidate{{PLUS}, {MINUS}, {DIVIDE}, {TIMES}}, []int{1, 1}, 1, []Candidate{{DIVIDE}, {TIMES}}},
+		{[]Candidate{{PLUS}, {MINUS}, {DIVIDE}, {TIMES}}, []int{1, 1}, 3, []Candidate{}},
+		{[]Candidate{}, []int{1, 1}, 3, []Candidate{}},
+		{[]Candidate{{PLUS}}, []int{1}, 3, []Candidate{}},
+		{[]Candidate{{PLUS}}, []int{1, 1, 1}, 3, []Candidate{}},
+	}
+
+	for index, testCase := range testCases {
+		actual := FilterOperators(testCase.Unfiltered, testCase.Terms, testCase.Goal)
+
+		if fmt.Sprintf("%v", actual) != fmt.Sprintf("%v", testCase.Expected) {
+			t.Errorf("Test case %d: FilterOperators(%v %v %d) expected: %v, got: %v",
+				index, testCase.Unfiltered, testCase.Terms, testCase.Goal, testCase.Expected, actual)
 		}
 	}
 }
