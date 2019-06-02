@@ -109,12 +109,36 @@ type FilterOperatorsCase struct {
 
 func TestFilterOperators(t *testing.T) {
 	testCases := []FilterOperatorsCase{
-		{[]Candidate{{PLUS}, {MINUS}, {DIVIDE}, {TIMES}}, []int{1, 1}, 2, []Candidate{{PLUS}}},
-		{[]Candidate{{PLUS}, {MINUS}, {DIVIDE}, {TIMES}}, []int{1, 1}, 1, []Candidate{{DIVIDE}, {TIMES}}},
-		{[]Candidate{{PLUS}, {MINUS}, {DIVIDE}, {TIMES}}, []int{1, 1}, 3, []Candidate{}},
-		{[]Candidate{}, []int{1, 1}, 3, []Candidate{}},
-		{[]Candidate{{PLUS}}, []int{1}, 3, []Candidate{}},
-		{[]Candidate{{PLUS}}, []int{1, 1, 1}, 3, []Candidate{}},
+		{
+			[]Candidate{{PLUS}, {MINUS}, {DIVIDE}, {TIMES}},
+			[]int{1, 1},
+			2,
+			[]Candidate{{PLUS}},
+		}, {
+			[]Candidate{{PLUS}, {MINUS}, {DIVIDE}, {TIMES}},
+			[]int{1, 1},
+			1,
+			[]Candidate{{DIVIDE}, {TIMES}},
+		}, {[]Candidate{{PLUS}, {MINUS}, {DIVIDE}, {TIMES}},
+			[]int{1, 1},
+			3,
+			[]Candidate{},
+		}, {
+			[]Candidate{},
+			[]int{1, 1},
+			3,
+			[]Candidate{},
+		}, {
+			[]Candidate{{PLUS}},
+			[]int{1},
+			3,
+			[]Candidate{},
+		}, {
+			[]Candidate{{PLUS}},
+			[]int{1, 1, 1},
+			3,
+			[]Candidate{},
+		},
 	}
 
 	for index, testCase := range testCases {
