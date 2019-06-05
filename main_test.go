@@ -1,13 +1,14 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"testing"
 )
 
 func TestGenerateOperators0(t *testing.T) {
-	testCases := []int{0, 1, 100}
+	testCases := []int{0, 1, 15}
 	for index, input := range testCases {
 		var operators, err = GenerateOperators(input)
 
@@ -24,7 +25,7 @@ func TestGenerateOperators0(t *testing.T) {
 }
 
 func TestGenerateOperatorsBadInput(t *testing.T) {
-	testCases := []int{-1, math.MinInt64, 101, math.MaxInt64}
+	testCases := []int{-1, math.MinInt64, 16, math.MaxInt64}
 
 	for index, input := range testCases {
 		operators, err := GenerateOperators(input)
@@ -147,6 +148,53 @@ func TestFilterOperators(t *testing.T) {
 		if fmt.Sprintf("%v", actual) != fmt.Sprintf("%v", testCase.Expected) {
 			t.Errorf("Test case %d: FilterOperators(%v %v %d) expected: %v, got: %v",
 				index, testCase.Unfiltered, testCase.Terms, testCase.Goal, testCase.Expected, actual)
+		}
+	}
+}
+
+type GenerateAllOperatorsCase struct {
+	OperatorCount uint
+	Candidates    []Candidate
+	Error         error
+}
+
+func TestGenerateAllOperators(t *testing.T) {
+	testCases := []GenerateAllOperatorsCase{
+		{
+			1,
+			[]Candidate{{PLUS}, {MINUS}, {TIMES}, {DIVIDE}},
+			nil,
+		}, {
+			2,
+			[]Candidate{
+				{PLUS, PLUS}, {MINUS, PLUS}, {TIMES, PLUS}, {DIVIDE, PLUS},
+				{PLUS, MINUS}, {MINUS, MINUS}, {TIMES, MINUS}, {DIVIDE, MINUS},
+				{PLUS, TIMES}, {MINUS, TIMES}, {TIMES, TIMES}, {DIVIDE, TIMES},
+				{PLUS, DIVIDE}, {MINUS, DIVIDE}, {TIMES, DIVIDE}, {DIVIDE, DIVIDE},
+			},
+			nil,
+		}, {
+			0,
+			nil,
+			errors.New("bad operator count: 16 > operators > 0"),
+		}, {
+			16,
+			nil,
+			errors.New("bad operator count: 16 > operators > 0"),
+		},
+	}
+
+	for index, testCase := range testCases {
+		actualOperators, actualError := GenerateAllOperators(testCase.OperatorCount)
+
+		if fmt.Sprintf("%v", actualError) != fmt.Sprintf("%v", testCase.Error) {
+			t.Errorf("Test case %d: GenerateAllOperators(%d) expected error: %v, got error: %v",
+				index, testCase.OperatorCount, testCase.Error, actualError)
+		}
+
+		if fmt.Sprintf("%v", actualOperators) != fmt.Sprintf("%v", testCase.Candidates) {
+			t.Errorf("Test case %d: GenerateAllOperators(%d) expected: %v, got: %v",
+				index, testCase.OperatorCount, testCase.Candidates, actualOperators)
 		}
 	}
 }
