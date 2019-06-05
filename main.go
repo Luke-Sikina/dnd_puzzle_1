@@ -118,11 +118,11 @@ func EvaluateOperator(first int, second int, operator Operator) int {
 	}
 }
 
-func GenerateTerms(count, max int) Terms {
+func GenerateTerms(count, min, max int) Terms {
 	terms := make([]int, count, count)
 	randGenerator := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < count; i++ {
-		terms[i] = randGenerator.Intn(max)
+		terms[i] = randGenerator.Intn(max-min) + min
 	}
 
 	return terms
@@ -151,7 +151,7 @@ func main() {
 
 func GenerateTermsUntilSingleCandidate(allOperators []Candidate, termCount int, actualOperators []Operator) (allTerms []Terms) {
 	for len(allOperators) > 1 {
-		terms := GenerateTerms(termCount, 13)
+		terms := GenerateTerms(termCount, 2, 13)
 		allTerms = append(allTerms, terms)
 		goal := terms[0]
 		for index, operator := range actualOperators {
