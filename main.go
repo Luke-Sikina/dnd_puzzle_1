@@ -12,7 +12,10 @@ import (
 
 type Operator int
 type Candidate []Operator
-type Terms []int
+type Terms struct {
+	Terms    []int
+	Solution int
+}
 
 const (
 	PLUS Operator = iota
@@ -20,6 +23,14 @@ const (
 	TIMES
 	DIVIDE
 )
+
+func (terms Terms) Format(f fmt.State, c rune) {
+	toPrint := fmt.Sprintf("%v = %d", terms.Terms, terms.Solution)
+	_, err := f.Write([]byte(toPrint))
+	if err != nil {
+		log.Printf("Error formatting terms: %v", err)
+	}
+}
 
 func (operator Operator) Format(f fmt.State, c rune) {
 	var toWrite string
@@ -125,11 +136,11 @@ func GenerateTerms(count, min, max int) Terms {
 		terms[i] = randGenerator.Intn(max-min) + min
 	}
 
-	return terms
+	return Terms{terms, 0}
 }
 
 func main() {
-	termCount := 10
+	termCount := 12
 	operators, err := GenerateOperators(termCount - 1)
 
 	if err != nil {
@@ -151,13 +162,20 @@ func main() {
 
 func GenerateTermsUntilSingleCandidate(allOperators []Candidate, termCount int, actualOperators []Operator) (allTerms []Terms) {
 	for len(allOperators) > 1 {
-		terms := GenerateTerms(termCount, 2, 13)
-		allTerms = append(allTerms, terms)
-		goal := terms[0]
+		terms := GenerateTerms(termCount, 2, 20)
+		goal := terms.Terms[0]
 		for index, operator := range actualOperators {
-			goal = EvaluateOperator(goal, terms[index+1], operator)
+			goal = EvaluateOperator(goal, terms.Terms[index+1], operator)
 		}
-		allOperators = FilterOperators(allOperators, terms, goal)
+		oldLength := len(allOperators)
+		allOperators = FilterOperators(allOperators, terms.Terms, goal)
+		if oldLength > len(allOperators) {
+			terms.Solution = goal
+			allTerms = append(allTerms, terms)
+			log.Printf("Created terms: %v, currently %d valid candidates.", terms, len(allOperators))
+		} else {
+			log.Printf("Rejected terms: %v, did not reduce candidates.", terms)
+		}
 	}
 	return
 }
