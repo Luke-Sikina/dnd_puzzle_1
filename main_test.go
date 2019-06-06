@@ -51,6 +51,7 @@ type EvaluateCandidateCase struct {
 
 func TestEvaluateCandidate(t *testing.T) {
 	testCases := []EvaluateCandidateCase{
+		{Candidate{}, []int{2}, 2, true},
 		{Candidate{PLUS}, []int{2, 1}, 2, false},
 		{Candidate{TIMES}, []int{2, 1}, 2, true},
 		{Candidate{MINUS}, []int{2, 1}, 2, false},
@@ -196,5 +197,53 @@ func TestGenerateAllOperators(t *testing.T) {
 			t.Errorf("Test case %d: GenerateAllOperators(%d) expected: %v, got: %v",
 				index, testCase.OperatorCount, testCase.Candidates, actualOperators)
 		}
+	}
+}
+
+type GenerateTermsCase struct {
+	Count    int
+	Min      int
+	Max      int
+	Expected Terms
+}
+
+func TestGenerateTerms(t *testing.T) {
+	testCases := []GenerateTermsCase{
+		{1, 1, 2, Terms{[]int{1}, 0}},
+		{1, 0, 1, Terms{[]int{0}, 0}},
+		{3, 2, 3, Terms{[]int{2, 2, 2}, 0}},
+	}
+
+	//trying to remove as much logic from this test as possible, so the test isnt going to verify the ranges
+	for index, testCase := range testCases {
+		actual := GenerateTerms(testCase.Count, testCase.Min, testCase.Max)
+
+		if fmt.Sprintf("%v", actual) != fmt.Sprintf("%v", testCase.Expected) {
+			t.Errorf("Test case %d: GenerateTerms(%d, %d, %d) expected: %v, got %v",
+				index, testCase.Count, testCase.Min, testCase.Max, testCase.Expected, actual)
+		}
+	}
+}
+
+// Integration tests
+func TestGenerateTermsUntilSingleCandidate(t *testing.T) {
+	candidates := []Candidate{
+		[]Operator{PLUS},
+		[]Operator{MINUS},
+		[]Operator{TIMES},
+		[]Operator{DIVIDE},
+	}
+	termCount := 2
+	min := 3
+	max := 4
+	operators := []Operator{TIMES}
+
+	actual := GenerateTermsUntilSingleCandidate(candidates, termCount, min, max, operators)
+
+	expected := []Terms{{[]int{3, 3}, 9}}
+
+	if fmt.Sprintf("%v", actual) != fmt.Sprintf("%v", expected) {
+		t.Errorf("GenerateTermsUntilSingleCandidate(%v, %d, %d, %d, %v) expected: %v, got: %v",
+			candidates, termCount, min, max, operators, expected, actual)
 	}
 }

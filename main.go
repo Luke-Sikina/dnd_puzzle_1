@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"math"
@@ -139,30 +140,45 @@ func GenerateTerms(count, min, max int) Terms {
 	return Terms{terms, 0}
 }
 
-func main() {
-	termCount := 12
-	operators, err := GenerateOperators(termCount - 1)
+func parseParams() (terms, min, max int, err error) {
+	flag.IntVar(&terms, "terms", 3, "Number of terms (numbers) in the generated problems")
+	flag.IntVar(&min, "min", 2, "Minimum value for a term (number) in the generated problems")
+	flag.IntVar(&max, "max", 20, "Maximum value for a term (number) in the generated problems")
+	flag.Parse()
+	if min >= max {
+		err = errors.New("min must be  <= max")
+	}
+	log.Printf("Creating a %d term problem. Each term has a min of %d and a max of %d", terms, min, max)
+	return
+}
 
+func ifErrThenExit(message string, err error) {
 	if err != nil {
+		log.Printf(message, err)
 		os.Exit(1)
 	}
+}
+
+func main() {
+	termCount, min, max, err := parseParams()
+	ifErrThenExit("Error parsing params: %v", err)
+
+	operators, err := GenerateOperators(termCount - 1)
+	ifErrThenExit("Error generating operators: %v", err)
 
 	allOperators, err := GenerateAllOperators(uint(termCount - 1))
+	ifErrThenExit("error generating candidates: %v", err)
 
-	if err != nil {
-		os.Exit(1)
-	}
-
-	allTerms := GenerateTermsUntilSingleCandidate(allOperators, termCount, operators)
+	allTerms := GenerateTermsUntilSingleCandidate(allOperators, termCount, min, max, operators)
 	fmt.Printf("For the operators: %v, the terms generated are:\n", operators)
 	for _, row := range allTerms {
 		fmt.Printf("%v\n", row)
 	}
 }
 
-func GenerateTermsUntilSingleCandidate(allOperators []Candidate, termCount int, actualOperators []Operator) (allTerms []Terms) {
+func GenerateTermsUntilSingleCandidate(allOperators []Candidate, termCount, min, max int, actualOperators []Operator) (allTerms []Terms) {
 	for len(allOperators) > 1 {
-		terms := GenerateTerms(termCount, 2, 20)
+		terms := GenerateTerms(termCount, min, max)
 		goal := terms.Terms[0]
 		for index, operator := range actualOperators {
 			goal = EvaluateOperator(goal, terms.Terms[index+1], operator)
