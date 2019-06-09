@@ -5,7 +5,7 @@ to discover the operators using the provided problems.
 
 ## Example
 **Secret Operators**:
-*, -
+\*, -
 **Numbers**:
 ((2 ? 13) ? 13) = 13  
 ((16 ? 14) ? 6) = 218
