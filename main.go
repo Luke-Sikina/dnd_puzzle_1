@@ -65,29 +65,8 @@ func GenerateOperators(terms int) ([]Operator, error) {
 	return operators, nil
 }
 
-func GenerateAllOperators(operators uint) ([]Candidate, error) {
-	if operators <= 0 || operators > 15 {
-		return nil, errors.New("bad operator count: 16 > operators > 0")
-	}
-
-	//there are 4 operators, so each operator is 2 bytes in an unsigned int
-	var max uint = 1 << (2 * operators)
-	candidates := make([]Candidate, 1<<(2*operators), 1<<(2*operators))
-	for i := uint(0); i < max; i++ {
-		candidate := make(Candidate, operators, operators)
-		bits := i
-		for operatorIndex := uint(0); operatorIndex < operators; operatorIndex++ {
-			candidate[operatorIndex] = Operator(bits % 4)
-			bits = bits >> 2
-			candidates[i] = candidate
-		}
-	}
-
-	return candidates, nil
-}
-
 func OperatorGenerator(operators uint) (chan interface{}, error) {
-	ch := make(chan interface{}, 100) //unbuffered interfaces block on <-
+	ch := make(chan interface{}, 1000000) //unbuffered interfaces block on <-
 	if operators <= 0 || operators > 15 {
 		close(ch) //returning the actual empty, closed channel made testing a bit more fluid
 		return ch, errors.New("bad operator count: 16 > operators > 0")
@@ -164,10 +143,11 @@ func GenerateTerms(count, min, max int) Terms {
 	return Terms{terms, 0}
 }
 
-func parseParams() (terms, min, max int, err error) {
+func parseParams() (terms, min, max, attempts int, err error) {
 	flag.IntVar(&terms, "terms", 3, "Number of terms (numbers) in the generated problems")
 	flag.IntVar(&min, "min", 2, "Minimum value for a term (number) in the generated problems")
 	flag.IntVar(&max, "max", 20, "Maximum value for a term (number) in the generated problems")
+	flag.IntVar(&attempts, "att", 20, "Number of attempts (number)")
 	flag.Parse()
 	if min >= max {
 		err = errors.New("min must be  <= max")
@@ -184,38 +164,35 @@ func ifErrThenExit(message string, err error) {
 }
 
 func main() {
-	termCount, min, max, err := parseParams()
+	termCount, min, max, attempts, err := parseParams()
 	ifErrThenExit("Error parsing params: %v", err)
 
 	operators, err := GenerateOperators(termCount - 1)
 	ifErrThenExit("Error generating operators: %v", err)
 
-	allOperators, err := GenerateAllOperators(uint(termCount - 1))
+	generator, err := OperatorGenerator(uint(termCount - 1))
 	ifErrThenExit("error generating candidates: %v", err)
 
-	allTerms := GenerateTermsUntilSingleCandidate(allOperators, termCount, min, max, operators)
+	allTerms := GenerateTermsUntilSingleCandidate(generator, termCount, min, max, attempts, operators)
 	fmt.Printf("For the operators: %v, the terms generated are:\n", operators)
 	for _, row := range allTerms {
 		fmt.Printf("%v\n", row)
 	}
 }
 
-func GenerateTermsUntilSingleCandidate(allOperators []Candidate, termCount, min, max int, actualOperators []Operator) (allTerms []Terms) {
-	for len(allOperators) > 1 {
+func GenerateTermsUntilSingleCandidate(operatorGen chan interface{}, termCount, min, max, maxAttempts int, actualOperators []Operator) (allTerms []Terms) {
+	filterable := NewFilterable(operatorGen)
+	for attempts := 0; attempts < maxAttempts; attempts++ {
 		terms := GenerateTerms(termCount, min, max)
 		goal := terms.Terms[0]
 		for index, operator := range actualOperators {
 			goal = EvaluateOperator(goal, terms.Terms[index+1], operator)
 		}
-		oldLength := len(allOperators)
-		allOperators = FilterOperators(allOperators, terms.Terms, goal)
-		if oldLength > len(allOperators) {
-			terms.Solution = goal
-			allTerms = append(allTerms, terms)
-			log.Printf("Created terms: %v, currently %d valid candidates.", terms, len(allOperators))
-		} else {
-			log.Printf("Rejected terms: %v, did not reduce candidates.", terms)
-		}
+		terms.Solution = goal
+		allTerms = append(allTerms, terms)
+		log.Printf("Created terms: %v.", terms)
+		predicate := func(candidate interface{}) bool { return EvaluateCandidate(candidate.(Candidate), terms.Terms, goal) }
+		filterable = filterable.Filter(predicate)
 	}
 	return
 }

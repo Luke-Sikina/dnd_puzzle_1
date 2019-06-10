@@ -159,47 +159,6 @@ type GenerateAllOperatorsCase struct {
 	Error         error
 }
 
-func TestGenerateAllOperators(t *testing.T) {
-	testCases := []GenerateAllOperatorsCase{
-		{
-			1,
-			[]Candidate{{PLUS}, {MINUS}, {TIMES}, {DIVIDE}},
-			nil,
-		}, {
-			2,
-			[]Candidate{
-				{PLUS, PLUS}, {MINUS, PLUS}, {TIMES, PLUS}, {DIVIDE, PLUS},
-				{PLUS, MINUS}, {MINUS, MINUS}, {TIMES, MINUS}, {DIVIDE, MINUS},
-				{PLUS, TIMES}, {MINUS, TIMES}, {TIMES, TIMES}, {DIVIDE, TIMES},
-				{PLUS, DIVIDE}, {MINUS, DIVIDE}, {TIMES, DIVIDE}, {DIVIDE, DIVIDE},
-			},
-			nil,
-		}, {
-			0,
-			nil,
-			errors.New("bad operator count: 16 > operators > 0"),
-		}, {
-			16,
-			nil,
-			errors.New("bad operator count: 16 > operators > 0"),
-		},
-	}
-
-	for index, testCase := range testCases {
-		actualOperators, actualError := GenerateAllOperators(testCase.OperatorCount)
-
-		if fmt.Sprintf("%v", actualError) != fmt.Sprintf("%v", testCase.Error) {
-			t.Errorf("Test case %d: GenerateAllOperators(%d) expected error: %v, got error: %v",
-				index, testCase.OperatorCount, testCase.Error, actualError)
-		}
-
-		if fmt.Sprintf("%v", actualOperators) != fmt.Sprintf("%v", testCase.Candidates) {
-			t.Errorf("Test case %d: GenerateAllOperators(%d) expected: %v, got: %v",
-				index, testCase.OperatorCount, testCase.Candidates, actualOperators)
-		}
-	}
-}
-
 func TestOperatorGenerator(t *testing.T) {
 	testCases := []GenerateAllOperatorsCase{
 		{
@@ -230,7 +189,7 @@ func TestOperatorGenerator(t *testing.T) {
 	for index, testCase := range testCases {
 		generator, actualError := OperatorGenerator(testCase.OperatorCount)
 		filterable := NewFilterable(generator)
-		actual := (&filterable).ToSlice()
+		actual := filterable.ToSlice()
 		if fmt.Sprintf("%v", actualError) != fmt.Sprintf("%v", testCase.Error) {
 			t.Errorf("Test case %d: GenerateAllOperators(%d) expected error: %v, got error: %v",
 				index, testCase.OperatorCount, testCase.Error, actualError)
@@ -268,6 +227,19 @@ func TestGenerateTerms(t *testing.T) {
 	}
 }
 
+func candidateGenerator(candidates []Candidate) chan interface{} {
+	ch := make(chan interface{}, 5)
+
+	go func() {
+		defer close(ch)
+		for _, candidate := range candidates {
+			ch <- candidate
+		}
+	}()
+
+	return ch
+}
+
 // Integration tests
 func TestGenerateTermsUntilSingleCandidate(t *testing.T) {
 	candidates := []Candidate{
@@ -281,7 +253,7 @@ func TestGenerateTermsUntilSingleCandidate(t *testing.T) {
 	max := 4
 	operators := []Operator{TIMES}
 
-	actual := GenerateTermsUntilSingleCandidate(candidates, termCount, min, max, operators)
+	actual := GenerateTermsUntilSingleCandidate(candidateGenerator(candidates), termCount, min, max, 1, operators)
 
 	expected := []Terms{{[]int{3, 3}, 9}}
 

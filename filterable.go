@@ -6,6 +6,8 @@ import (
 	"log"
 )
 
+const ChannelSize = 1000000
+
 type Predicate func(subject interface{}) bool
 type Filterable struct {
 	Current chan interface{}
@@ -15,11 +17,11 @@ type Filterable struct {
 	Errored bool
 }
 
-func NewFilterable(unfiltered chan interface{}) Filterable {
+func NewFilterable(unfiltered chan interface{}) *Filterable {
 	sem := semaphore.NewWeighted(1)
-	return Filterable{
+	return &Filterable{
 		unfiltered,
-		make(chan interface{}, 100),
+		make(chan interface{}, ChannelSize),
 		sem,
 		context.TODO(),
 		false,
@@ -49,7 +51,7 @@ func (objects *Filterable) Filter(predicate Predicate) *Filterable {
 		}
 		close(objects.Next)
 		objects.Current = objects.Next
-		objects.Next = make(chan interface{}, 100)
+		objects.Next = make(chan interface{}, ChannelSize)
 		objects.Ready.Release(1)
 
 		log.Printf("Filtering complete and lock released")
