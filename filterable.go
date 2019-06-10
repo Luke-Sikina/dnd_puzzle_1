@@ -1,29 +1,21 @@
 package main
 
 import (
-	"context"
-	"golang.org/x/sync/semaphore"
 	"log"
 )
 
-const ChannelSize = 1000000
+const ChannelSize = 10000
 
 type Predicate func(subject interface{}) bool
+type Stream chan interface{}
 type Filterable struct {
-	Current chan interface{}
-	Next    chan interface{}
-	Ready   *semaphore.Weighted
-	Context context.Context
+	Streams []Stream
 	Errored bool
 }
 
-func NewFilterable(unfiltered chan interface{}) *Filterable {
-	sem := semaphore.NewWeighted(1)
+func NewFilterable(unfiltered Stream) *Filterable {
 	return &Filterable{
-		unfiltered,
-		make(chan interface{}, ChannelSize),
-		sem,
-		context.TODO(),
+		[]Stream{unfiltered},
 		false,
 	}
 }
@@ -33,27 +25,23 @@ func (objects *Filterable) Filter(predicate Predicate) *Filterable {
 		log.Printf("Skipping because of previous error")
 		return objects
 	}
-
-	err := objects.Ready.Acquire(objects.Context, 1) // wait for last round of filtering to finish
-	if err != nil {
-		log.Printf("Error aquiring lock to filter: %v", err)
-		return objects
-	}
-
-	log.Printf("Lock aquired")
+	streamNum := len(objects.Streams)
+	current := objects.Streams[len(objects.Streams)-1]
+	next := make(Stream, ChannelSize)
+	objects.Streams = append(objects.Streams, next)
+	// append isnt dont asynchronously, so a simple slice will do
+	// However, it is important to hang on to current and next
+	// rather than getting them in the goroutine itself
 
 	go func() {
-		log.Printf("Begining filtering")
-		for object := range objects.Current {
+		log.Printf("Begining filtering from stream %d to stream %d", streamNum-1, streamNum)
+		for object := range current {
 			if predicate(object) {
-				objects.Next <- object
+				next <- object
 			}
 		}
-		close(objects.Next)
-		objects.Current = objects.Next
-		objects.Next = make(chan interface{}, ChannelSize)
-		objects.Ready.Release(1)
-
+		close(next) // this looks weird, but it's right. This is where the objects for next
+		// are being generated, so this code is responsible for closing that channel
 		log.Printf("Filtering complete and lock released")
 	}()
 
@@ -61,13 +49,7 @@ func (objects *Filterable) Filter(predicate Predicate) *Filterable {
 }
 
 func (objects *Filterable) ToSlice() (filteredObjects []interface{}) {
-	err := objects.Ready.Acquire(objects.Context, 1) // wait for last round of filtering to finish
-	if err != nil {
-		log.Printf("Error aquiring lock to filter: %v", err)
-		return
-	}
-
-	for object := range objects.Current {
+	for object := range objects.Streams[len(objects.Streams)-1] {
 		filteredObjects = append(filteredObjects, object)
 	}
 	return

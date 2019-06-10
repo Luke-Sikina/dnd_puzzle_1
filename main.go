@@ -52,8 +52,8 @@ func (operator Operator) Format(f fmt.State, c rune) {
 }
 
 func GenerateOperators(terms int) ([]Operator, error) {
-	if terms < 0 || terms > 15 { // these bounds make more sense in GenerateAllOperators, copied here for consistency
-		return nil, errors.New("terms < 0")
+	if terms < 0 || terms > 1000 { // these bounds make more sense in GenerateAllOperators, copied here for consistency
+		return nil, errors.New("1000 > terms < 0")
 	}
 	randGenerator := rand.New(rand.NewSource(time.Now().UnixNano()))
 
@@ -67,9 +67,9 @@ func GenerateOperators(terms int) ([]Operator, error) {
 
 func OperatorGenerator(operators uint) (chan interface{}, error) {
 	ch := make(chan interface{}, 1000000) //unbuffered interfaces block on <-
-	if operators <= 0 || operators > 15 {
+	if operators <= 0 || operators > 1000 {
 		close(ch) //returning the actual empty, closed channel made testing a bit more fluid
-		return ch, errors.New("bad operator count: 16 > operators > 0")
+		return ch, errors.New("bad operator count: 100 > operators > 0")
 	}
 
 	go func() {
