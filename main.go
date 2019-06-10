@@ -86,6 +86,30 @@ func GenerateAllOperators(operators uint) ([]Candidate, error) {
 	return candidates, nil
 }
 
+func OperatorGenerator(operators uint) (chan interface{}, error) {
+	ch := make(chan interface{}, 100) //unbuffered interfaces block on <-
+	if operators <= 0 || operators > 15 {
+		close(ch) //returning the actual empty, closed channel made testing a bit more fluid
+		return ch, errors.New("bad operator count: 16 > operators > 0")
+	}
+
+	go func() {
+		defer close(ch)
+		var max uint = 1 << (2 * operators)
+		for i := uint(0); i < max; i++ {
+			candidate := make(Candidate, operators, operators)
+			bits := i
+			for operatorIndex := uint(0); operatorIndex < operators; operatorIndex++ {
+				candidate[operatorIndex] = Operator(bits % 4)
+				bits = bits >> 2
+			}
+			ch <- candidate
+		}
+	}()
+
+	return ch, nil
+}
+
 func FilterOperators(unfiltered []Candidate, terms []int, goal int) (filtered []Candidate) {
 	for _, candidate := range unfiltered {
 		if EvaluateCandidate(candidate, terms, goal) {

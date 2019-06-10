@@ -200,6 +200,49 @@ func TestGenerateAllOperators(t *testing.T) {
 	}
 }
 
+func TestOperatorGenerator(t *testing.T) {
+	testCases := []GenerateAllOperatorsCase{
+		{
+			1,
+			[]Candidate{{PLUS}, {MINUS}, {TIMES}, {DIVIDE}},
+			nil,
+		},
+		{
+			2,
+			[]Candidate{
+				{PLUS, PLUS}, {MINUS, PLUS}, {TIMES, PLUS}, {DIVIDE, PLUS},
+				{PLUS, MINUS}, {MINUS, MINUS}, {TIMES, MINUS}, {DIVIDE, MINUS},
+				{PLUS, TIMES}, {MINUS, TIMES}, {TIMES, TIMES}, {DIVIDE, TIMES},
+				{PLUS, DIVIDE}, {MINUS, DIVIDE}, {TIMES, DIVIDE}, {DIVIDE, DIVIDE},
+			},
+			nil,
+		}, {
+			0,
+			nil,
+			errors.New("bad operator count: 16 > operators > 0"),
+		}, {
+			16,
+			nil,
+			errors.New("bad operator count: 16 > operators > 0"),
+		},
+	}
+
+	for index, testCase := range testCases {
+		generator, actualError := OperatorGenerator(testCase.OperatorCount)
+		filterable := NewFilterable(generator)
+		actual := (&filterable).ToSlice()
+		if fmt.Sprintf("%v", actualError) != fmt.Sprintf("%v", testCase.Error) {
+			t.Errorf("Test case %d: GenerateAllOperators(%d) expected error: %v, got error: %v",
+				index, testCase.OperatorCount, testCase.Error, actualError)
+		}
+
+		if fmt.Sprintf("%v", actual) != fmt.Sprintf("%v", testCase.Candidates) {
+			t.Errorf("Test case %d: GenerateAllOperators(%d) expected: %v, got: %v",
+				index, testCase.OperatorCount, testCase.Candidates, actual)
+		}
+	}
+}
+
 type GenerateTermsCase struct {
 	Count    int
 	Min      int
