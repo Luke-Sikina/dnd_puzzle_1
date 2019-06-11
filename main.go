@@ -69,7 +69,7 @@ func OperatorGenerator(operators uint) (chan interface{}, error) {
 	ch := make(chan interface{}, 1000000) //unbuffered interfaces block on <-
 	if operators <= 0 || operators > 1000 {
 		close(ch) //returning the actual empty, closed channel made testing a bit more fluid
-		return ch, errors.New("bad operator count: 100 > operators > 0")
+		return ch, errors.New("bad operator count: 1000 > operators > 0")
 	}
 
 	go func() {

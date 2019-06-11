@@ -25,7 +25,7 @@ func TestGenerateOperators0(t *testing.T) {
 }
 
 func TestGenerateOperatorsBadInput(t *testing.T) {
-	testCases := []int{-1, math.MinInt64, 16, math.MaxInt64}
+	testCases := []int{-1, math.MinInt64, 10000, math.MaxInt64}
 
 	for index, input := range testCases {
 		operators, err := GenerateOperators(input)
@@ -178,11 +178,7 @@ func TestOperatorGenerator(t *testing.T) {
 		}, {
 			0,
 			nil,
-			errors.New("bad operator count: 16 > operators > 0"),
-		}, {
-			16,
-			nil,
-			errors.New("bad operator count: 16 > operators > 0"),
+			errors.New("bad operator count: 1000 > operators > 0"),
 		},
 	}
 
