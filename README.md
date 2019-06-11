@@ -4,12 +4,12 @@ It generates a series of operators, and then sets of problems that pair with the
 to discover the operators using the provided problems.
 
 ## Example
-**Secret Operators**:
-\*, \-
+**Secret Operators**:  
+\*, \-  
 
-**Numbers**:
-((2 ? 13) ? 13) = 13  
-((16 ? 14) ? 6) = 218
+**Numbers**:  
+((2 ? 13) ? 13) = 13    
+((16 ? 14) ? 6) = 218  
 
 The dungeon master gives the players the numbers and it is their job to discover the secret operators.
 
